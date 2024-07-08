@@ -3,14 +3,17 @@ import tempfile
 from roboflow import Roboflow
 
 # 로보플로우 API 설정
-rf = Roboflow(api_key="API-KEY")
-project = rf.workspace().project("safety-vision")
-
+rf = Roboflow(api_key="uU79vf8s9NUST3y2r3vl")
+#d7LiJNpy5htM2c4GcPkY : 욜로 모델 키포인트를 ground truth로 해서 라벨링 version3가 키포인트는 꼬였으나 가장 성능 괜찮음
+#wYU3g3bBqcZNZYNmWAxv : 7월 4일 라벨링 weight
+#"uU79vf8s9NUST3y2r3vl" : 자체 이미지 292장 + 수집한 이미지 500여장 포함된거
+project = rf.workspace("boda").project("bodaboda-5str8")
+print(project)
 # 웹캠 캡처 설정
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 
 # 모델 로드
-model = project.version(1).model
+model = project.version(3).model
 
 # 웹캠에서 프레임을 캡처하고 처리하는 루프
 while True:
@@ -35,9 +38,15 @@ while True:
                 x, y, w, h = bbox['x'], bbox['y'], bbox['width'], bbox['height']
                 class_name = bbox['class']
             
+                if class_name == 'Person':
+                    box_color = (0, 255, 0)
+                    text_color = (36, 255, 12)
+                else : 
+                    box_color = (0,0,255)
+                    text_color = (0, 0, 255)
                 # 객체 경계 상자 그리기
-                cv2.rectangle(frame, (int(x - w / 2), int(y - h / 2)), (int(x + w / 2), int(y + h / 2)), (0, 255, 0), 2)
-                cv2.putText(frame, class_name, (int(x - w / 2), int(y - h / 2) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36, 255, 12), 2)
+                cv2.rectangle(frame, (int(x - w / 2), int(y - h / 2)), (int(x + w / 2), int(y + h / 2)), box_color,2)
+                cv2.putText(frame, class_name, (int(x - w / 2), int(y - h / 2) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, text_color, 2)
 
             # 키포인트 그리기
                 for keypoint in bbox['keypoints']:
