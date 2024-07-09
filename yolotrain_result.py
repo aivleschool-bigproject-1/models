@@ -13,7 +13,7 @@ cap = cv2.VideoCapture(1)
 model = YOLO("v5_nano_results.pt", verbose=False)
 #v3 : 2024-07-06apply all augumentation to imbalanced dataset(number of dataset 805->19,11) 
 #v4 : 2024-07-09,apply all augumentation to more balanced than v3 (number of dataset 1041 -> 2477)
-#v5 : 2024-07-09,not augumentation (number of dataset 1041)
+#v5 : 2024-07-09,not augumentation (number of dataset 1041) small better chatched fallperson than nano, nano catched better than small others
 # 웹캠에서 프레임을 캡처하고 처리하는 루프
 start_time = time.time()
 while True:
@@ -41,6 +41,9 @@ while True:
                 if label == 'Person':
                     box_color = (0, 255, 0)
                     text_color = (36, 255, 12)
+                elif label == 'Fallperson':
+                    box_color = (224, 0, 0)
+                    text_color = (224, 0, 0)    
                 else : 
                     box_color = (0,0,255)
                     text_color = (0, 0, 255)
@@ -51,7 +54,7 @@ while True:
                 for point in person_keypoints:
                     x, y = map(int, point)
                     if x1 <= x <= x2 and y1 <= y <= y2:
-                        cv2.circle(frame, (x, y), 5, (0, 0, 255), -1)
+                        cv2.circle(frame, (x, y), 2, (0, 0, 255), -1)
                 
     # 결과 프레임을 디스플레이
     cv2.imshow('YOLOv8 Pose Detection', frame)
