@@ -3,10 +3,8 @@ import tempfile
 from roboflow import Roboflow
 
 # 로보플로우 API 설정
-rf = Roboflow(api_key="uU79vf8s9NUST3y2r3vl")
-#d7LiJNpy5htM2c4GcPkY : 욜로 모델 키포인트를 ground truth로 해서 라벨링 version3가 키포인트는 꼬였으나 가장 성능 괜찮음
-#wYU3g3bBqcZNZYNmWAxv : 7월 4일 라벨링 weight
-#"uU79vf8s9NUST3y2r3vl" : 자체 이미지 292장 + 수집한 이미지 500여장 포함된거
+rf = Roboflow(api_key="API-KEY")
+
 project = rf.workspace("boda").project("bodaboda-5str8")
 print(project)
 # 웹캠 캡처 설정
@@ -53,7 +51,7 @@ while True:
                     kp_x, kp_y = keypoint['x'], keypoint['y']
                     confidence = keypoint['confidence']
                     if confidence > 0.3:  # 신뢰도가 0.5 이상인 키포인트만 표시
-                        cv2.circle(frame, (int(kp_x), int(kp_y)), 5, (0, 0, 255), -1)
+                        cv2.circle(frame, (int(kp_x), int(kp_y)), 3, (0, 0, 255), -1)
 
     # 결과 프레임 보여주기
     cv2.imshow('frame', frame)
