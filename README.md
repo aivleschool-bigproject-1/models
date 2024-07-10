@@ -2,6 +2,9 @@
 ## 실행환경
 1. Anaconda(python 3.11.5)
 
+## 실행방법
+Running wiht yolotrain_result.py
+
 ## 버전관리
 v3 : 2024-07-06apply all augumentation to imbalanced dataset(number of dataset 805->19,11) 
 
