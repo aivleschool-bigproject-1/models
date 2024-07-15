@@ -6,14 +6,15 @@ from ultralytics import YOLO
 import time
 
 # 웹캡 캡처 설정
-#video_path = 'video2.mp4'
-cap = cv2.VideoCapture(1)
+video_path = 'fallpeople.mp4'
+cap = cv2.VideoCapture(0)
 
 # YOLO 모델 로드 (YOLOv8 모델)
-model = YOLO("v5_nano_results.pt", verbose=False)
+model = YOLO("v8_nano_results.pt", verbose=False)
 #v3 : 2024-07-06apply all augumentation to imbalanced dataset(number of dataset 805->19,11) 
-#v4 : 2024-07-09,apply all augumentation to more balanced than v3 (number of dataset 1041 -> 2477)
+#v4 : 2024-07-09,apply all augumentation to more balanced than v3 (number of dataset 1041 -> 2477) 성능 좋았음
 #v5 : 2024-07-09,not augumentation (number of dataset 1041) small better chatched fallperson than nano, nano catched better than small others
+#v6 : 2024-07-10, apply all augumentation * 5, v6.4 : init labels and label again to 1022 images(성능 좋았음), v6.5 : augumentation * 5, v6.6 : augumentation *3
 # 웹캠에서 프레임을 캡처하고 처리하는 루프
 start_time = time.time()
 while True:
@@ -31,7 +32,7 @@ while True:
         keypoints = result.keypoints.xy.cpu().numpy()
         
         for i, box in enumerate(boxes):
-            if scores[i] >= 0.4:
+            if scores[i] >= 0.6:
                 x1, y1, x2, y2 = map(int, box)
                 cls_id = int(result.boxes.cls[i])  # 클래스 ID 얻기
                 label = model.names[cls_id]  # Object name 얻기
@@ -43,7 +44,10 @@ while True:
                     text_color = (36, 255, 12)
                 elif label == 'Fallperson':
                     box_color = (224, 0, 0)
-                    text_color = (224, 0, 0)    
+                    text_color = (224, 0, 0)   
+                elif label == 'Safehat':
+                    box_color = (255, 255, 255)
+                    text_color = (255, 255, 255)
                 else : 
                     box_color = (0,0,255)
                     text_color = (0, 0, 255)
