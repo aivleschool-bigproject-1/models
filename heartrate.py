@@ -3,6 +3,9 @@ import dlib
 import numpy as np
 import time
 from scipy.signal import butter, lfilter
+from collections import deque
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 class HeartRateMonitor:
     def __init__(self, buffer_size=150):
@@ -16,6 +19,9 @@ class HeartRateMonitor:
         self.times = []
         self.bpm = 0
         self.t0 = time.time()
+        
+        # 그래프 설정
+        self.bpm_values = deque(maxlen=buffer_size)
 
     # 입력 이미지에서 얼굴 검출, 랜드마크 추출
     def get_landmarks(self, image):
@@ -23,8 +29,8 @@ class HeartRateMonitor:
         faces = self.detector(gray)
         if len(faces) > 0:
             landmarks = self.predictor(gray, faces[0])
-            return [(p.x, p.y) for p in landmarks.parts()]
-        return None
+            return [(p.x, p.y) for p in landmarks.parts()], faces[0]
+        return None, None
 
     # 랜드마크를 이용해 이마 영역을 추출
     def get_forehead_roi(self, landmarks, image):
@@ -44,7 +50,9 @@ class HeartRateMonitor:
 
     # 프레임 처리, 심박수 계산
     def run(self, frame):
-        landmarks = self.get_landmarks(frame)
+        landmarks, face = self.get_landmarks(frame)
+        if face is not None:
+            cv2.rectangle(frame, (face.left(), face.top()), (face.right(), face.bottom()), (0, 255, 0), 2)
         roi = self.get_forehead_roi(landmarks, frame)
         green_mean = self.extract_green_channel_mean(roi)
 
@@ -74,7 +82,35 @@ class HeartRateMonitor:
         freqs = np.fft.rfftfreq(len(filtered), 1.0/fs)
         idx = np.argmax(fft)
         self.bpm = freqs[idx] * 60.0
+        self.bpm_values.append(self.bpm)
         print(f"BPM: {self.bpm:.2f}")
+
+    # 실시간 그래프 업데이트
+    def plot_bpm(self, width, height):
+        fig, ax = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
+        fig.patch.set_facecolor('black')
+        ax.set_facecolor('black')
+        
+        if len(self.bpm_values) > 1:
+            ax.plot(self.bpm_values, color='green')
+        ax.set_xlim([0, self.buffer_size])
+        ax.set_ylim([0, 200])
+        ax.set_xlabel('Time', color='white')
+        ax.set_ylabel('BPM', color='white')
+        ax.xaxis.label.set_color('white')
+        ax.yaxis.label.set_color('white')
+        ax.tick_params(axis='x', colors='white')
+        ax.tick_params(axis='y', colors='white')
+        for spine in ax.spines.values():
+            spine.set_edgecolor('white')
+
+        canvas = FigureCanvas(fig)
+        canvas.draw()
+        buf = canvas.buffer_rgba()
+        graph = np.asarray(buf)
+        graph = cv2.cvtColor(graph, cv2.COLOR_RGBA2BGR)
+        plt.close(fig)
+        return graph
 
 def main():
     cap = cv2.VideoCapture(0)
@@ -85,7 +121,23 @@ def main():
         if not ret:
             break
 
+        frame_height, frame_width, _ = frame.shape
+        graph_width = int(frame_width * 2 / 5)
+        graph_height = int(frame_height / 3)
+        output_width = frame_width + graph_width
+        output_height = frame_height
+        output_frame = np.ones((output_height, output_width, 3), dtype=np.uint8) * 255
+        
         monitor.run(frame)
+
+        # 웹캠 화면을 output_frame의 왼쪽 3/5 영역에 넣기
+        output_frame[:, :frame_width] = frame
+
+        # BPM 그래프
+        bpm_graph = monitor.plot_bpm(graph_width, graph_height)
+        output_frame[:graph_height, frame_width:frame_width + graph_width] = bpm_graph
+
+        cv2.imshow('Frame', output_frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
