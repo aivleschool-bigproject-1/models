@@ -85,7 +85,7 @@ class HeartRateMonitor:
             return
 
         try:
-            filtered = self.butter_bandpass_filter(self.data_buffer, 0.8, 3.5, fs, order=5)
+            filtered = self.butter_bandpass_filter(self.data_buffer, 0.75, 4, fs, order=5)
         except ValueError as e:
             print(f"Error in filtering: {e}")
             return
