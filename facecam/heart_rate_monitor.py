@@ -58,22 +58,45 @@ class HeartRateMonitor:
                 self.compute_heart_rate()
 
     def butter_bandpass_filter(self, data, lowcut, highcut, fs, order=5):
+        if fs <= 0:
+            raise ValueError("Sampling frequency must be positive and non-zero.")
+    
         nyquist = 0.5 * fs
         low = lowcut / nyquist
         high = highcut / nyquist
+
+        # high값이 지속적으로 1보다 크면 87번 line highcut 값을 조금씩 낮추기
+        print('high 값:',high)
+        
+        if low <= 0 or high >= 1:
+            raise ValueError("Digital filter critical frequencies must be 0 < Wn < 1.")
+    
         b, a = butter(order, [low, high], btype='band')
         y = lfilter(b, a, data)
         return y
 
     def compute_heart_rate(self):
+        if len(self.data_buffer) < 2:
+            return
+    
         fs = len(self.data_buffer) / (self.times[-1] - self.times[0])
-        filtered = self.butter_bandpass_filter(self.data_buffer, 0.75, 4.0, fs, order=5)
+        if fs <= 0:
+            print("Sampling frequency is non-positive, skipping heart rate calculation.")
+            return
+
+        try:
+            filtered = self.butter_bandpass_filter(self.data_buffer, 0.75, 3.95, fs, order=5)
+        except ValueError as e:
+            print(f"Error in filtering: {e}")
+            return
+
         fft = np.abs(np.fft.rfft(filtered))
         freqs = np.fft.rfftfreq(len(filtered), 1.0/fs)
         idx = np.argmax(fft)
         self.bpm = freqs[idx] * 60.0
         self.bpm_values.append(self.bpm)
         print(f"BPM: {self.bpm:.2f}")
+
 
     def plot_bpm(self, width, height):
         fig, ax = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
